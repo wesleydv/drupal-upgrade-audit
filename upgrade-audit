@@ -1,0 +1,61 @@
+#!/usr/bin/php
+<?php
+
+$base_dir = '/tmp';
+$project = $argv[1];
+
+function pl($str) {
+    echo $str . PHP_EOL;
+}
+
+// Check if drupal check is avaible.
+if (!`which drupal-check`) {
+    pl('drupal-check command not found, please install it globally https://github.com/mglaman/drupal-check#installation');
+    exit(1);
+}
+
+$dir = $base_dir . '/' . $project;
+if (is_dir($dir)) {
+	pl("### You already have the code, fancy, fetching and checking out master ###");
+	chdir($dir);
+	`git fetch --quiet`;
+	`git checkout --quiet master`;
+}
+else {
+    echo "### Cloning the code, you know like Dolly ###";
+	chdir($base_dir);
+	`git clone --quiet git@git.dropsolid.com:project/$project.git`;
+	chdir($dir);
+}
+
+// Look for commit where core/lib/Drupal.php was added
+pl('### Looking for the original Drupal version ###');
+$revision = trim(`git log --format=%H --diff-filter=A -- *lib/Drupal.php | head -n 1`);
+
+// Extract version
+$ls_tree = `git ls-tree --name-only -r $revision`;
+preg_match('/.*lib\/Drupal\.php$/m', $ls_tree, $drupal_php_path);
+$drupal_php_path = $drupal_php_path[0];
+$drupal_php_content = `git show $revision:$drupal_php_path`;
+preg_match('/const VERSION = \'([0-9\.]+)\'/', $drupal_php_content, $orginal_drupal_version);
+$orginal_drupal_version = $orginal_drupal_version[1];
+pl('Orginal Drupal version: ' . $orginal_drupal_version);
+
+// Complexity
+pl('### Assessing complexity ###');
+$custom_modules = trim(`find docroot/modules/custom -type f -name *.info.yml | wc -l`);
+$custom_lines = trim(`find docroot/modules/custom -type f \( -name "*.php" -o -name "*.module" \) -print0 | xargs -0 cat | wc -l`);
+pl("There are $custom_modules custom modules and $custom_lines lines of custom code.");
+
+// Run drupal-check
+pl("### Looking for deprecated code ###");
+$check_results_file = $dir . '-check.txt';
+`drupal-check docroot/modules/custom &> $check_results_file`;
+$check_results = file_get_contents($check_results_file);
+if (preg_match('/\[OK\]/', $check_results)) {
+    pl('Could not find any deprecated code in custom modules, you may still want to check' . $check_results_file);
+}
+if (preg_match('/Found (\d+) errors/', $check_results, $num_errors)) {
+    $num_errors = $num_errors[1];
+    pl('Drupal check result: Found ' . $num_errors . ' errors, check ' . $check_results_file . ' for details');
+}
