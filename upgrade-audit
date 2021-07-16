@@ -10,7 +10,7 @@ $base_dir = '/tmp';
 $result = [];
 $project = $argv[1];
 
-// Check if drupal check is avaible.
+// Check if drupal check is available.
 if (!`which drupal-check`) {
     pl('drupal-check command not found, please install it globally https://github.com/mglaman/drupal-check#installation');
     exit(1);
@@ -67,13 +67,13 @@ foreach ($enabled_modules as $module) {
     $module_compatibility[$status][] = $module;
 }
 $summary = [];
-$summary[] = sprintf('There are %s enabled modules, % are submodules: ' , count($enabled_modules), count($module_compatibility['submodule']));
+$summary[] = sprintf('There are %s enabled modules, %s are submodules: ' , count($enabled_modules), count($module_compatibility['submodule']));
 $summary[] = sprintf(' - %s are part of core' , count($module_compatibility['core']));
 $summary[] = sprintf(' - %s are custom' , count($module_compatibility['custom']));
 $summary[] = sprintf(' - %s are compatabile with D9' , count($module_compatibility['compatible']));
 $summary[] = sprintf(' - %s are compatabile with D9 after upgrading' , count($module_compatibility['compatible_after_upgrade']));
 $summary[] = sprintf(' - %s are not compatabile with D9' , count($module_compatibility['not_compatible']));
-addResult(implode(PHP_EOL, $summary));  
+addResult(implode(PHP_EOL, $summary));
 
 // Run drupal-check
 pl("# Looking for deprecated code");
