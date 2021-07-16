@@ -4,13 +4,11 @@
 require __DIR__ . '/vendor/autoload.php';
 
 use Symfony\Component\Yaml\Yaml;
+use GuzzleHttp\Client;
 
 $base_dir = '/tmp';
+$result = [];
 $project = $argv[1];
-
-function pl($str) {
-    echo $str . PHP_EOL;
-}
 
 // Check if drupal check is avaible.
 if (!`which drupal-check`) {
@@ -20,20 +18,20 @@ if (!`which drupal-check`) {
 
 $dir = $base_dir . '/' . $project;
 if (is_dir($dir)) {
-	pl("### You already have the code, fancy, fetching and checking out master ###");
+	pl("# You already have the code, fancy, fetching and checking out master");
 	chdir($dir);
 	`git fetch --quiet`;
 	`git checkout --quiet master`;
 }
 else {
-    echo "### Cloning the code, you know like Dolly ###";
+    echo "# Cloning the code, you know like Dolly";
 	chdir($base_dir);
 	`git clone --quiet git@git.dropsolid.com:project/$project.git`;
 	chdir($dir);
 }
 
 // Look for commit where core/lib/Drupal.php was added
-pl('### Looking for the original Drupal version ###');
+pl('# Looking for the original Drupal version');
 $revision = trim(`git log --format=%H --diff-filter=A -- *lib/Drupal.php | head -n 1`);
 
 // Extract version
@@ -43,29 +41,128 @@ $drupal_php_path = $drupal_php_path[0];
 $drupal_php_content = `git show $revision:$drupal_php_path`;
 preg_match('/const VERSION = \'([0-9\.]+)\'/', $drupal_php_content, $orginal_drupal_version);
 $orginal_drupal_version = $orginal_drupal_version[1];
-pl('Orginal Drupal version: ' . $orginal_drupal_version);
+addResult('Orginal Drupal version: ' . $orginal_drupal_version);
 
 // Custom code Complexity
-pl('### Assessing complexity ###');
+pl('# Assessing complexity');
 $custom_modules = trim(`find docroot/modules/custom -type f -name *.info.yml | wc -l`);
 $custom_lines = trim(`find docroot/modules/custom -type f \( -name "*.php" -o -name "*.module" \) -print0 | xargs -0 cat | wc -l`);
-pl("There are $custom_modules custom modules and $custom_lines lines of custom code.");
+addResult("There are $custom_modules custom modules and $custom_lines lines of custom code");
 
-// Contrib module 
+// Check compatibility modules
+pl('# Checking compatibility of modules, this might take a while');
 $core_extensions_path = trim(`find . -name "core.extension.yml" -print -quit`);
 $core_extensions = Yaml::parseFile($core_extensions_path);
 $enabled_modules = array_keys($core_extensions['module']);
-pl('There are ' . count($enabled_modules) . ' modules enabled.');
+$module_compatibility = [
+    'core' => [],
+    'submodule' => [],
+    'custom' => [],
+    'compatible' => [],
+    'compatible_after_upgrade' => [],
+    'not_compatible' => [],
+];
+foreach ($enabled_modules as $module) {
+    $status = checkModule($module);
+    $module_compatibility[$status][] = $module;
+}
+$summary = [];
+$summary[] = sprintf('There are %s enabled modules, % are submodules: ' , count($enabled_modules), count($module_compatibility['submodule']));
+$summary[] = sprintf(' - %s are part of core' , count($module_compatibility['core']));
+$summary[] = sprintf(' - %s are custom' , count($module_compatibility['custom']));
+$summary[] = sprintf(' - %s are compatabile with D9' , count($module_compatibility['compatible']));
+$summary[] = sprintf(' - %s are compatabile with D9 after upgrading' , count($module_compatibility['compatible_after_upgrade']));
+$summary[] = sprintf(' - %s are not compatabile with D9' , count($module_compatibility['not_compatible']));
+addResult(implode(PHP_EOL, $summary));  
 
 // Run drupal-check
-pl("### Looking for deprecated code ###");
+pl("# Looking for deprecated code");
 $check_results_file = $dir . '-check.txt';
 `drupal-check docroot/modules/custom &> $check_results_file`;
 $check_results = file_get_contents($check_results_file);
 if (preg_match('/\[OK\]/', $check_results)) {
-    pl('Could not find any deprecated code in custom modules, you may still want to check' . $check_results_file);
+    addResult('Drupal check: Found no errors, make sure you check ' . $check_results_file . ' for details');
 }
 if (preg_match('/Found (\d+) errors/', $check_results, $num_errors)) {
     $num_errors = $num_errors[1];
-    pl('Drupal check result: Found ' . $num_errors . ' errors, check ' . $check_results_file . ' for details');
+    addResult('Drupal check: Found ' . $num_errors . ' errors, check ' . $check_results_file . ' for details');
+}
+
+pl();
+pl('##########################################################');
+pl();
+foreach ($result as $line) {
+    pl($line);
+    pl();
+}
+pl('##########################################################');
+pl();
+
+
+/**
+ * Write to screen.
+ */
+function pl($str = '') {
+    echo $str . PHP_EOL;
+}
+
+function addResult($str) {
+    global $result;
+    $result[] = $str;
+}
+
+function checkModule($module) {
+    $info = getModuleInfo($module);
+
+    if (isset($info['project']) && $info['project'] != $module) {
+        return 'submodule';
+    }
+
+    if (checkCoreVersionString($info['core_version_requirement'])) {
+        return 'compatible';
+    }
+
+    if (preg_match('/core\/modules/', $info['path'])) {
+        return 'core';
+    }
+
+    if (preg_match('/modules\/custom/', $info['path'])) {
+        return 'custom';
+    }
+
+    return checkCompatibiltyOnDrupalOrg($module);
+}
+
+function getModuleInfo($module) {
+    $yml_path = trim(`find . -name "$module.info.yml" -print -quit`);
+    $info = Yaml::parseFile($yml_path);
+    $info['path'] = $yml_path;
+    return $info;
+}
+
+function checkCoreVersionString($str) {
+    return preg_match('/\^9/', $str);
+}
+
+function checkCompatibiltyOnDrupalOrg($module) {
+    // Assemble url
+    $url = 'https://updates.drupal.org/release-history/' . $module . '/current';
+
+    // Do call via Guzzle
+    $client = new Client();
+    $response = $client->request('GET', $url);
+
+    // Read xml
+    $data = new SimpleXMLElement($response->getBody());
+    if (!isset($data->title)) {
+        return 'not_found';
+    }
+
+    foreach ($data->releases->children() as $release) {
+        if (preg_match('/\^9/', (string) $release->core_compatibility)) {
+            return 'compatible_after_upgrade';
+        }
+    }
+
+    return 'not_compatible';
 }
