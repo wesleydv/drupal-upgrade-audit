@@ -1,6 +1,10 @@
 #!/usr/bin/php
 <?php
 
+require __DIR__ . '/vendor/autoload.php';
+
+use Symfony\Component\Yaml\Yaml;
+
 $base_dir = '/tmp';
 $project = $argv[1];
 
@@ -41,11 +45,17 @@ preg_match('/const VERSION = \'([0-9\.]+)\'/', $drupal_php_content, $orginal_dru
 $orginal_drupal_version = $orginal_drupal_version[1];
 pl('Orginal Drupal version: ' . $orginal_drupal_version);
 
-// Complexity
+// Custom code Complexity
 pl('### Assessing complexity ###');
 $custom_modules = trim(`find docroot/modules/custom -type f -name *.info.yml | wc -l`);
 $custom_lines = trim(`find docroot/modules/custom -type f \( -name "*.php" -o -name "*.module" \) -print0 | xargs -0 cat | wc -l`);
 pl("There are $custom_modules custom modules and $custom_lines lines of custom code.");
+
+// Contrib module 
+$core_extensions_path = trim(`find . -name "core.extension.yml" -print -quit`);
+$core_extensions = Yaml::parseFile($core_extensions_path);
+$enabled_modules = array_keys($core_extensions['module']);
+pl('There are ' . count($enabled_modules) . ' modules enabled.');
 
 // Run drupal-check
 pl("### Looking for deprecated code ###");
