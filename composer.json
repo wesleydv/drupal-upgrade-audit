@@ -1,6 +1,12 @@
 {
+    "autoload": {
+        "psr-4": {
+            "wesleydv\\DrupalUpgradeAudit\\": "src"
+        }
+    },
     "require": {
         "symfony/yaml": "^5.3",
-        "guzzlehttp/guzzle": "^7.0"
+        "guzzlehttp/guzzle": "^7.0",
+        "ext-simplexml": "*"
     }
 }

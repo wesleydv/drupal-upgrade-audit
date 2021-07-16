@@ -3,8 +3,9 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Symfony\Component\Yaml\Yaml;
-use GuzzleHttp\Client;
+use wesleydv\DrupalUpgradeAudit\Version;
+use wesleydv\DrupalUpgradeAudit\Complexity;
+use wesleydv\DrupalUpgradeAudit\Compatibility;
 
 $base_dir = '/tmp';
 $result = [];
@@ -30,50 +31,17 @@ else {
 	chdir($dir);
 }
 
-// Look for commit where core/lib/Drupal.php was added
-pl('# Looking for the original Drupal version');
-$revision = trim(`git log --format=%H --diff-filter=A -- *lib/Drupal.php | head -n 1`);
+pl('# Looking up Drupal versions');
+addResult('Original Drupal version: ' . Version::getInitialDrupalVersion());
 
-// Extract version
-$ls_tree = `git ls-tree --name-only -r $revision`;
-preg_match('/.*lib\/Drupal\.php$/m', $ls_tree, $drupal_php_path);
-$drupal_php_path = $drupal_php_path[0];
-$drupal_php_content = `git show $revision:$drupal_php_path`;
-preg_match('/const VERSION = \'([0-9\.]+)\'/', $drupal_php_content, $orginal_drupal_version);
-$orginal_drupal_version = $orginal_drupal_version[1];
-addResult('Orginal Drupal version: ' . $orginal_drupal_version);
-
-// Custom code Complexity
 pl('# Assessing complexity');
-$custom_modules = trim(`find docroot/modules/custom -type f -name *.info.yml | wc -l`);
-$custom_lines = trim(`find docroot/modules/custom -type f \( -name "*.php" -o -name "*.module" \) -print0 | xargs -0 cat | wc -l`);
-addResult("There are $custom_modules custom modules and $custom_lines lines of custom code");
+addResult(sprintf('There are %s custom modules and %s lines of custom code', Complexity::getCustomModules(), Complexity::getCustomCodeLines()));
 
 // Check compatibility modules
-pl('# Checking compatibility of modules, this might take a while');
-$core_extensions_path = trim(`find . -name "core.extension.yml" -print -quit`);
-$core_extensions = Yaml::parseFile($core_extensions_path);
-$enabled_modules = array_keys($core_extensions['module']);
-$module_compatibility = [
-    'core' => [],
-    'submodule' => [],
-    'custom' => [],
-    'compatible' => [],
-    'compatible_after_upgrade' => [],
-    'not_compatible' => [],
-];
-foreach ($enabled_modules as $module) {
-    $status = checkModule($module);
-    $module_compatibility[$status][] = $module;
-}
-$summary = [];
-$summary[] = sprintf('There are %s enabled modules, %s are submodules: ' , count($enabled_modules), count($module_compatibility['submodule']));
-$summary[] = sprintf(' - %s are part of core' , count($module_compatibility['core']));
-$summary[] = sprintf(' - %s are custom' , count($module_compatibility['custom']));
-$summary[] = sprintf(' - %s are compatabile with D9' , count($module_compatibility['compatible']));
-$summary[] = sprintf(' - %s are compatabile with D9 after upgrading' , count($module_compatibility['compatible_after_upgrade']));
-$summary[] = sprintf(' - %s are not compatabile with D9' , count($module_compatibility['not_compatible']));
-addResult(implode(PHP_EOL, $summary));
+pl('# Checking compatibility, this might take a while');
+$compatibility = new Compatibility();
+$compatibility->run();
+addResult($compatibility->getSummary());
 
 // Run drupal-check
 pl("# Looking for deprecated code");
@@ -109,60 +77,4 @@ function pl($str = '') {
 function addResult($str) {
     global $result;
     $result[] = $str;
-}
-
-function checkModule($module) {
-    $info = getModuleInfo($module);
-
-    if (isset($info['project']) && $info['project'] != $module) {
-        return 'submodule';
-    }
-
-    if (checkCoreVersionString($info['core_version_requirement'])) {
-        return 'compatible';
-    }
-
-    if (preg_match('/core\/modules/', $info['path'])) {
-        return 'core';
-    }
-
-    if (preg_match('/modules\/custom/', $info['path'])) {
-        return 'custom';
-    }
-
-    return checkCompatibiltyOnDrupalOrg($module);
-}
-
-function getModuleInfo($module) {
-    $yml_path = trim(`find . -name "$module.info.yml" -print -quit`);
-    $info = Yaml::parseFile($yml_path);
-    $info['path'] = $yml_path;
-    return $info;
-}
-
-function checkCoreVersionString($str) {
-    return preg_match('/\^9/', $str);
-}
-
-function checkCompatibiltyOnDrupalOrg($module) {
-    // Assemble url
-    $url = 'https://updates.drupal.org/release-history/' . $module . '/current';
-
-    // Do call via Guzzle
-    $client = new Client();
-    $response = $client->request('GET', $url);
-
-    // Read xml
-    $data = new SimpleXMLElement($response->getBody());
-    if (!isset($data->title)) {
-        return 'not_found';
-    }
-
-    foreach ($data->releases->children() as $release) {
-        if (preg_match('/\^9/', (string) $release->core_compatibility)) {
-            return 'compatible_after_upgrade';
-        }
-    }
-
-    return 'not_compatible';
 }
