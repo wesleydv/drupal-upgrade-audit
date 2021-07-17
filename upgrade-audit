@@ -3,19 +3,17 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-use wesleydv\DrupalUpgradeAudit\Version;
 use wesleydv\DrupalUpgradeAudit\Complexity;
 use wesleydv\DrupalUpgradeAudit\Compatibility;
+use wesleydv\DrupalUpgradeAudit\DrupalCheck;
+use wesleydv\DrupalUpgradeAudit\Version;
 
 $base_dir = '/tmp';
 $result = [];
 $project = $argv[1];
 
-// Check if drupal check is available.
-if (!`which drupal-check`) {
-    pl('drupal-check command not found, please install it globally https://github.com/mglaman/drupal-check#installation');
-    exit(1);
-}
+$drupal_check = new DrupalCheck();
+$compatibility = new Compatibility();
 
 $dir = $base_dir . '/' . $project;
 if (is_dir($dir)) {
@@ -39,22 +37,12 @@ addResult(sprintf('There are %s custom modules and %s lines of custom code', Com
 
 // Check compatibility modules
 pl('# Checking compatibility, this might take a while');
-$compatibility = new Compatibility();
 $compatibility->run();
 addResult($compatibility->getSummary());
 
 // Run drupal-check
 pl("# Looking for deprecated code");
-$check_results_file = $dir . '-check.txt';
-`drupal-check docroot/modules/custom &> $check_results_file`;
-$check_results = file_get_contents($check_results_file);
-if (preg_match('/\[OK\]/', $check_results)) {
-    addResult('Drupal check: Found no errors, make sure you check ' . $check_results_file . ' for details');
-}
-if (preg_match('/Found (\d+) errors/', $check_results, $num_errors)) {
-    $num_errors = $num_errors[1];
-    addResult('Drupal check: Found ' . $num_errors . ' errors, check ' . $check_results_file . ' for details');
-}
+addResult($drupal_check->runDeprecated($dir));
 
 pl();
 pl('##########################################################');
@@ -65,7 +53,6 @@ foreach ($result as $line) {
 }
 pl('##########################################################');
 pl();
-
 
 /**
  * Write to screen.
