@@ -7,15 +7,13 @@ use wesleydv\DrupalUpgradeAudit\Complexity;
 use wesleydv\DrupalUpgradeAudit\Compatibility;
 use wesleydv\DrupalUpgradeAudit\Data;
 use wesleydv\DrupalUpgradeAudit\DrupalCheck;
-use wesleydv\DrupalUpgradeAudit\FetchCode;
+use wesleydv\DrupalUpgradeAudit\Git;
 use wesleydv\DrupalUpgradeAudit\Version;
 
 $data = new Data($argv[1]);
-$fetcher = new FetchCode($data);
+$git = new Git($data);
 $drupal_check = new DrupalCheck($data);
 $compatibility = new Compatibility();
-
-$fetcher->run();
 
 pl('# Looking up Drupal versions');
 $data->addResult('Original Drupal version: ' . Version::getInitialDrupalVersion());

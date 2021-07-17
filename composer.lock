@@ -4,8 +4,60 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9e3567c6b657f37684fe327d5bc8f483",
+    "content-hash": "0e44a9b07a9af7e11222efd0863a1822",
     "packages": [
+        {
+            "name": "czproject/git-php",
+            "version": "v4.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/czproject/git-php.git",
+                "reference": "32505124ef2a8651f10a5afebace58f85eff2f93"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/czproject/git-php/zipball/32505124ef2a8651f10a5afebace58f85eff2f93",
+                "reference": "32505124ef2a8651f10a5afebace58f85eff2f93",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6.0"
+            },
+            "require-dev": {
+                "nette/tester": "^2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Jan Pecha",
+                    "email": "janpecha@email.cz"
+                }
+            ],
+            "description": "Library for work with Git repository in PHP.",
+            "keywords": [
+                "git"
+            ],
+            "support": {
+                "issues": "https://github.com/czproject/git-php/issues",
+                "source": "https://github.com/czproject/git-php/tree/v4.0.2"
+            },
+            "funding": [
+                {
+                    "url": "https://www.paypal.com/donate?hosted_button_id=EPSKR7MGVV7KC",
+                    "type": "custom"
+                }
+            ],
+            "time": "2021-06-15T09:39:16+00:00"
+        },
         {
             "name": "guzzlehttp/guzzle",
             "version": "7.3.0",
@@ -676,7 +728,9 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "ext-simplexml": "*"
+    },
     "platform-dev": [],
     "plugin-api-version": "2.1.0"
 }

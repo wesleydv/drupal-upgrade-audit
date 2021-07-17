@@ -2,6 +2,8 @@
 
 namespace wesleydv\DrupalUpgradeAudit;
 
+use CzProject\GitPhp\Helpers;
+
 /**
  * Class Data.
  *
@@ -11,14 +13,16 @@ namespace wesleydv\DrupalUpgradeAudit;
  */
 class Data {
 
+  private $repo;
   private $project;
   private $baseDir = '/tmp';
   private $result = [];
   private $dir;
 
-  public function __construct(string $project) {
-    $this->project = $project;
-    $this->dir = sprintf('%s/%s', $this->baseDir, $project);
+  public function __construct(string $repo) {
+    $this->repo = $repo;
+    $this->project = Helpers::extractRepositoryNameFromUrl($repo);
+    $this->dir = sprintf('%s/%s', $this->baseDir, $this->project);
   }
 
   public function getProject(): string {
@@ -39,6 +43,10 @@ class Data {
 
   public function getBaseDir(): string {
     return $this->baseDir;
+  }
+
+  public function getRepo(): string {
+    return $this->repo;
   }
 
 }
