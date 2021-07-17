@@ -5,49 +5,37 @@ require __DIR__ . '/vendor/autoload.php';
 
 use wesleydv\DrupalUpgradeAudit\Complexity;
 use wesleydv\DrupalUpgradeAudit\Compatibility;
+use wesleydv\DrupalUpgradeAudit\Data;
 use wesleydv\DrupalUpgradeAudit\DrupalCheck;
+use wesleydv\DrupalUpgradeAudit\FetchCode;
 use wesleydv\DrupalUpgradeAudit\Version;
 
-$base_dir = '/tmp';
-$result = [];
-$project = $argv[1];
-
-$drupal_check = new DrupalCheck();
+$data = new Data($argv[1]);
+$fetcher = new FetchCode($data);
+$drupal_check = new DrupalCheck($data);
 $compatibility = new Compatibility();
 
-$dir = $base_dir . '/' . $project;
-if (is_dir($dir)) {
-	pl("# You already have the code, fancy, fetching and checking out master");
-	chdir($dir);
-	`git fetch --quiet`;
-	`git checkout --quiet master`;
-}
-else {
-    echo "# Cloning the code, you know like Dolly";
-	chdir($base_dir);
-	`git clone --quiet git@git.dropsolid.com:project/$project.git`;
-	chdir($dir);
-}
+$fetcher->run();
 
 pl('# Looking up Drupal versions');
-addResult('Original Drupal version: ' . Version::getInitialDrupalVersion());
+$data->addResult('Original Drupal version: ' . Version::getInitialDrupalVersion());
 
 pl('# Assessing complexity');
-addResult(sprintf('There are %s custom modules and %s lines of custom code', Complexity::getCustomModules(), Complexity::getCustomCodeLines()));
+$data->addResult(sprintf('There are %s custom modules and %s lines of custom code', Complexity::getCustomModules(), Complexity::getCustomCodeLines()));
 
 // Check compatibility modules
 pl('# Checking compatibility, this might take a while');
 $compatibility->run();
-addResult($compatibility->getSummary());
+$data->addResult($compatibility->getSummary());
 
 // Run drupal-check
 pl("# Looking for deprecated code");
-addResult($drupal_check->runDeprecated($dir));
+$data->addResult($drupal_check->runDeprecated());
 
 pl();
 pl('##########################################################');
 pl();
-foreach ($result as $line) {
+foreach ($data->getResult() as $line) {
     pl($line);
     pl();
 }
@@ -59,9 +47,4 @@ pl();
  */
 function pl($str = '') {
     echo $str . PHP_EOL;
-}
-
-function addResult($str) {
-    global $result;
-    $result[] = $str;
 }

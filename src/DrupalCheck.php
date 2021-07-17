@@ -5,29 +5,30 @@ namespace wesleydv\DrupalUpgradeAudit;
 /**
  * Class DrupalCheck.
  *
- * Check for module compatibility.
+ * Check custom code for deprecated code.
  *
  * @package wesleydv\DrupalUpgradeAudit
  */
 class DrupalCheck {
 
+  private $data;
+
   /**
    * DrupalCheck constructor.
    */
-  public function __construct() {
+  public function __construct(Data $data) {
     $this->commandAvailable();
+    $this->data = $data;
   }
 
   /**
    * Run drupal-check and check for deprecated code.
    *
-   * Todo: Remove dir argument.
-   *
    * @return string
    *   A summary of drupal-check
    */
-  public function runDeprecated($dir): string {
-    $check_results_file = $dir . '-check.txt';
+  public function runDeprecated(): string {
+    $check_results_file = $this->data->getDir() . '-check.txt';
     `drupal-check docroot/modules/custom &> $check_results_file`;
     $check_results = file_get_contents($check_results_file);
     if (preg_match('/\[OK\]/', $check_results)) {
