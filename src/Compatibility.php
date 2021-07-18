@@ -139,6 +139,7 @@ class Compatibility {
    *   Module info.
    */
   private function getModuleInfo(string $module): array {
+    // ToDo: This is slow
     $yml_path = trim(`find . -name "$module.info.yml" -print -quit`);
     $info = Yaml::parseFile($yml_path);
     $info['path'] = $yml_path;
