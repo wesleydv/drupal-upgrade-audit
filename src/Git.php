@@ -19,7 +19,6 @@ class Git extends GitPhp {
   public function __construct(Data $data, IRunner $runner = NULL) {
     parent::__construct($runner);
     $this->data = $data;
-    $this->prepare();
   }
 
   /**
@@ -27,7 +26,7 @@ class Git extends GitPhp {
    *
    * @throws \CzProject\GitPhp\GitException
    */
-  private function prepare(): void {
+  public function prepare(): void {
     $dir = $this->data->getDir();
 
     if (is_dir($dir)) {

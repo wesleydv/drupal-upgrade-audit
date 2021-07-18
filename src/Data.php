@@ -19,10 +19,14 @@ class Data {
   private $result = [];
   private $dir;
 
-  public function __construct(string $repo) {
+  public function setRepo(string $repo) {
     $this->repo = $repo;
     $this->project = Helpers::extractRepositoryNameFromUrl($repo);
     $this->dir = sprintf('%s/%s', $this->baseDir, $this->project);
+  }
+
+  public function getRepo(): string {
+    return $this->repo;
   }
 
   public function getProject(): string {
@@ -43,10 +47,6 @@ class Data {
 
   public function getBaseDir(): string {
     return $this->baseDir;
-  }
-
-  public function getRepo(): string {
-    return $this->repo;
   }
 
 }

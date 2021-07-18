@@ -3,46 +3,22 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-use wesleydv\DrupalUpgradeAudit\Complexity;
+use Symfony\Component\Console\Application;
 use wesleydv\DrupalUpgradeAudit\Compatibility;
 use wesleydv\DrupalUpgradeAudit\Data;
 use wesleydv\DrupalUpgradeAudit\DrupalCheck;
 use wesleydv\DrupalUpgradeAudit\Git;
-use wesleydv\DrupalUpgradeAudit\Version;
+use wesleydv\DrupalUpgradeAudit\UpgradeAudit;
 
-$data = new Data($argv[1]);
+// Prepare.
+$application = new Application();
+$data = new Data();
 $git = new Git($data);
 $drupal_check = new DrupalCheck($data);
 $compatibility = new Compatibility();
 
-pl('# Looking up Drupal versions');
-$data->addResult('Original Drupal version: ' . Version::getInitialDrupalVersion());
-
-pl('# Assessing complexity');
-$data->addResult(sprintf('There are %s custom modules and %s lines of custom code', Complexity::getCustomModules(), Complexity::getCustomCodeLines()));
-
-// Check compatibility modules
-pl('# Checking compatibility, this might take a while');
-$compatibility->run();
-$data->addResult($compatibility->getSummary());
-
-// Run drupal-check
-pl("# Looking for deprecated code");
-$data->addResult($drupal_check->runDeprecated());
-
-pl();
-pl('##########################################################');
-pl();
-foreach ($data->getResult() as $line) {
-    pl($line);
-    pl();
-}
-pl('##########################################################');
-pl();
-
-/**
- * Write to screen.
- */
-function pl($str = '') {
-    echo $str . PHP_EOL;
-}
+// Setup application.
+$application = new Application();
+$application->add(new UpgradeAudit($data, $git, $drupal_check, $compatibility));
+$application->setDefaultCommand('upgrade-audit', TRUE);
+$application->run();
