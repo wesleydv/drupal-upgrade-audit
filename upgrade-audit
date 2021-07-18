@@ -9,13 +9,15 @@ use wesleydv\DrupalUpgradeAudit\Data;
 use wesleydv\DrupalUpgradeAudit\DrupalCheck;
 use wesleydv\DrupalUpgradeAudit\Git;
 use wesleydv\DrupalUpgradeAudit\UpgradeAudit;
+use GuzzleHttp\Client;
 
 // Prepare.
 $application = new Application();
 $data = new Data();
 $git = new Git($data);
 $drupal_check = new DrupalCheck($data);
-$compatibility = new Compatibility();
+$client = new Client();
+$compatibility = new Compatibility($client);
 
 // Setup application.
 $application = new Application();

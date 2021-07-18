@@ -22,24 +22,16 @@ class Compatibility {
   const NOT_COMPATIBLE = 'not_compatible';
   const NOT_FOUND = 'not_found';
 
-  /**
-   * Results array.
-   *
-   * @var array
-   */
   private $results;
-
-  /**
-   * List of enabled modules.
-   *
-   * @var array
-   */
   private $enabledModules;
+  private $client;
 
   /**
    * Compatibility constructor.
+   *
+   * @param \GuzzleHttp\Client $client
    */
-  public function __construct() {
+  public function __construct(Client $client) {
     $this->results = [
       self::CORE => [],
       self::SUBMODULE => [],
@@ -49,6 +41,7 @@ class Compatibility {
       self::NOT_COMPATIBLE => [],
       self::NOT_FOUND => [],
     ];
+    $this->client = $client;
   }
 
   /**
@@ -179,8 +172,7 @@ class Compatibility {
   private function checkCompatibilityOnDrupalOrg(string $module): string {
     $url = sprintf('https://updates.drupal.org/release-history/%s/current', $module);
 
-    $client = new Client();
-    $response = $client->request('GET', $url);
+    $response = $this->client->request('GET', $url);
 
     $data = new \SimpleXMLElement($response->getBody());
     if (!isset($data->title)) {
