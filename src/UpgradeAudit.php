@@ -19,15 +19,17 @@ class UpgradeAudit extends Command {
 
   protected $data;
   protected $git;
+  protected $version;
   protected $complexity;
   protected $drupalCheck;
   protected $compatibility;
 
-  public function __construct(Data $data, Git $git, Complexity $complexity, DrupalCheck $drupalCheck, Compatibility $compatibility, string $name = NULL) {
+  public function __construct(Data $data, Git $git, Version $version, Complexity $complexity, DrupalCheck $drupalCheck, Compatibility $compatibility, string $name = NULL) {
     parent::__construct($name);
 
     $this->data = $data;
     $this->git = $git;
+    $this->version = $version;
     $this->complexity = $complexity;
     $this->drupalCheck = $drupalCheck;
     $this->compatibility = $compatibility;
@@ -57,7 +59,7 @@ class UpgradeAudit extends Command {
 
     $progressBar->setMessage('Looking up Drupal versions');
     $progressBar->display();
-    $this->data->addResult('Original Drupal version: ' . Version::getInitialDrupalVersion());
+    $this->data->addResult('Original Drupal version: ' . $this->version->getInitialDrupalVersion());
     $progressBar->advance();
 
     $progressBar->setMessage('Assessing complexity');

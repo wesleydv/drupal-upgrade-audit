@@ -10,12 +10,14 @@ use wesleydv\DrupalUpgradeAudit\Data;
 use wesleydv\DrupalUpgradeAudit\DrupalCheck;
 use wesleydv\DrupalUpgradeAudit\Git;
 use wesleydv\DrupalUpgradeAudit\UpgradeAudit;
+use wesleydv\DrupalUpgradeAudit\Version;
 use GuzzleHttp\Client;
 
 // Prepare.
 $application = new Application();
 $data = new Data();
 $git = new Git($data);
+$version = new Version($git);
 $complexity = new Complexity($data);
 $drupal_check = new DrupalCheck($data);
 $client = new Client();
@@ -23,6 +25,6 @@ $compatibility = new Compatibility($data, $client);
 
 // Setup application.
 $application = new Application();
-$application->add(new UpgradeAudit($data, $git, $complexity, $drupal_check, $compatibility));
+$application->add(new UpgradeAudit($data, $git, $version, $complexity, $drupal_check, $compatibility));
 $application->setDefaultCommand('upgrade-audit', TRUE);
 $application->run();

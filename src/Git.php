@@ -3,6 +3,7 @@
 namespace wesleydv\DrupalUpgradeAudit;
 
 use CzProject\GitPhp\Git as GitPhp;
+use CzProject\GitPhp\GitRepository;
 use CzProject\GitPhp\IRunner;
 
 /**
@@ -15,6 +16,7 @@ use CzProject\GitPhp\IRunner;
 class Git extends GitPhp {
 
   private $data;
+  private $repo;
 
   public function __construct(Data $data, IRunner $runner = NULL) {
     parent::__construct($runner);
@@ -30,17 +32,20 @@ class Git extends GitPhp {
     $dir = $this->data->getDir();
 
     if (is_dir($dir)) {
-      $repo = $this->open($dir);
-      $repo->fetch();
-      $repo->checkout('master');
+      $this->repo = $this->open($dir);
+      $this->repo->fetch();
+      $this->repo->checkout('master');
     }
     else {
-      $this->cloneRepository($this->data->getRepo(), $dir);
+      $this->repo = $this->cloneRepository($this->data->getRepo(), $dir);
     }
 
+    // ToDo make this unnecessary. 
     chdir($dir);
   }
 
-
+  public function getRepo(): GitRepository {
+    return $this->repo;
+  }
 
 }

@@ -11,15 +11,21 @@ namespace wesleydv\DrupalUpgradeAudit;
  */
 class Version {
 
+  private $git;
+
+  public function __construct(Git $git) {
+    $this->git = $git;
+  }
+
   /**
    * Get initial Drupal version from Git history.
    *
    * @return string
    *   Initial Drupal version
    */
-  public static function getInitialDrupalVersion(): string {
-    $content = self::getFirstDrupalPhp();
-    return self::extractVersion($content);
+  public function getInitialDrupalVersion(): string {
+    $content = $this->getFirstDrupalPhp();
+    return $this->extractVersion($content);
   }
 
   /**
@@ -28,14 +34,22 @@ class Version {
    * @return string
    *   Content of lib/Drupal.php.
    */
-  private static function getFirstDrupalPhp(): string {
-    $revision = trim(`git log --format=%H --diff-filter=A -- *lib/Drupal.php | head -n 1`);
-    $ls_tree = `git ls-tree --name-only -r $revision`;
-    if (!preg_match('/.*lib\/Drupal\.php$/m', $ls_tree, $drupal_php_path)) {
+  private function getFirstDrupalPhp(): string {
+    $repo = $this->git->getRepo();
+
+    // Find commint where lib/Drupal.php is added the first time.
+    $revision = reset($repo->execute('log' , '--format=%H',  '--diff-filter=A', '--', '*lib/Drupal.php'));
+    $ls_tree = $repo->execute('ls-tree', '--name-only', '-r', $revision);
+
+    // Find the full path to lib/Drupal.php;
+    $results = preg_grep('/.*lib\/Drupal\.php$/', $ls_tree);
+    if (empty($results)) {
       throw new \RuntimeException('Could not find original lib/Drupal.php file');
     }
-    $drupal_php_path = $drupal_php_path[0];
-    return `git show $revision:$drupal_php_path`;
+    $drupal_php_path = reset($results);
+
+    // Return the content of lib/Drupal.php at that initial commit.
+    return implode(PHP_EOL, $repo->execute('show', sprintf('%s:%s', $revision, $drupal_php_path)));
   }
 
   /**
@@ -47,7 +61,7 @@ class Version {
    * @return string
    *   Drupal version.
    */
-  private static function extractVersion(string $content): string {
+  private function extractVersion(string $content): string {
     if (!preg_match('/const VERSION = \'([0-9\.]+)\'/', $content, $original_drupal_version)) {
       throw new \RuntimeException('Could not find version in lib/Drupal.php file');
     }
