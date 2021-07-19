@@ -19,14 +19,16 @@ class UpgradeAudit extends Command {
 
   protected $data;
   protected $git;
+  protected $complexity;
   protected $drupalCheck;
   protected $compatibility;
 
-  public function __construct(Data $data, Git $git, DrupalCheck $drupalCheck, Compatibility $compatibility, string $name = NULL) {
+  public function __construct(Data $data, Git $git, Complexity $complexity, DrupalCheck $drupalCheck, Compatibility $compatibility, string $name = NULL) {
     parent::__construct($name);
 
     $this->data = $data;
     $this->git = $git;
+    $this->complexity = $complexity;
     $this->drupalCheck = $drupalCheck;
     $this->compatibility = $compatibility;
   }
@@ -60,7 +62,7 @@ class UpgradeAudit extends Command {
 
     $progressBar->setMessage('Assessing complexity');
     $progressBar->display();
-    $this->data->addResult(sprintf('There are %s custom modules and %s lines of custom code', Complexity::getCustomModules(), Complexity::getCustomCodeLines()));
+    $this->data->addResult(sprintf('There are %s custom modules and %s lines of custom code', $this->complexity->getCustomModules(), $this->complexity->getCustomCodeLines()));
     $progressBar->advance();
 
     // Check compatibility modules

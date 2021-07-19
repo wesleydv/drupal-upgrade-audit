@@ -3,6 +3,7 @@
 namespace wesleydv\DrupalUpgradeAudit;
 
 use GuzzleHttp\Client;
+use Nette\Utils\Finder;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -24,6 +25,7 @@ class Compatibility {
 
   private $results;
   private $enabledModules;
+  private $data;
   private $client;
 
   /**
@@ -31,7 +33,7 @@ class Compatibility {
    *
    * @param \GuzzleHttp\Client $client
    */
-  public function __construct(Client $client) {
+  public function __construct(Data $data, Client $client) {
     $this->results = [
       self::CORE => [],
       self::SUBMODULE => [],
@@ -41,6 +43,7 @@ class Compatibility {
       self::NOT_COMPATIBLE => [],
       self::NOT_FOUND => [],
     ];
+    $this->data = $data;
     $this->client = $client;
   }
 
@@ -88,7 +91,13 @@ class Compatibility {
    *   List of enabled modules.
    */
   private function getEnabledModules(): array {
-    $core_extensions_path = trim(`find . -name "core.extension.yml" -print -quit`);
+    // Find core.extension.yml.
+    $iter = Finder::findFiles('**core.extension.yml')
+      ->from($this->data->getDir())
+      ->getIterator();
+    $iter->rewind();
+    $core_extensions_path = $iter->current()->getPathname();
+
     $core_extensions = Yaml::parseFile($core_extensions_path);
     if (!isset($core_extensions['module'])) {
       throw new \RuntimeException('Could not determine enabled modules');
@@ -140,7 +149,14 @@ class Compatibility {
    */
   private function getModuleInfo(string $module): array {
     // ToDo: This is slow
-    $yml_path = trim(`find . -name "$module.info.yml" -print -quit`);
+    //$yml_path = trim(`find . -name "$module.info.yml" -print -quit`);
+    $iter = Finder::findFiles(sprintf('**%s.info.yml', $module))
+      ->from($this->data->getDir())
+      //->exclude('.git', 'vendor')
+      ->getIterator();
+    $iter->rewind();
+    $yml_path = $iter->current()->getPathname();
+
     $info = Yaml::parseFile($yml_path);
     $info['path'] = $yml_path;
     return $info;
