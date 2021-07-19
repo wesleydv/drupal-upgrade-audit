@@ -28,8 +28,9 @@ class DrupalCheck {
    *   A summary of drupal-check
    */
   public function runDeprecated(): string {
-    $check_results_file = $this->data->getDir() . '-check.txt';
-    `drupal-check docroot/modules/custom &> $check_results_file`;
+    $dir = $this->data->getDir();
+    $check_results_file = sprintf('%s-check.txt', $dir);
+    `drupal-check $dir/*/modules/custom &> $check_results_file`;
     $check_results = file_get_contents($check_results_file);
     if (preg_match('/\[OK\]/', $check_results)) {
       return sprintf('Drupal check: Found no errors, make sure you check %s for details', $check_results_file);

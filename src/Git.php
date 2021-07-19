@@ -39,9 +39,6 @@ class Git extends GitPhp {
     else {
       $this->repo = $this->cloneRepository($this->data->getRepo(), $dir);
     }
-
-    // ToDo make this unnecessary. 
-    chdir($dir);
   }
 
   public function getRepo(): GitRepository {
