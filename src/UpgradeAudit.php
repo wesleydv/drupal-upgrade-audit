@@ -42,6 +42,7 @@ class UpgradeAudit extends Command {
       ->setDescription('Run upgrade audit.')
       ->setHelp('Check code for compatibility with Drupal 9.')
       ->addArgument('repo', InputArgument::REQUIRED , 'Code repository url')
+      ->addOption('skip-compability')
     ;
   }
 
@@ -68,10 +69,12 @@ class UpgradeAudit extends Command {
     $progressBar->advance();
 
     // Check compatibility modules
-    $progressBar->setMessage('Checking compatibility, this might take a while');
-    $progressBar->display();
-    $this->compatibility->run();
-    $this->data->addResult($this->compatibility->getSummary());
+    if (!$input->getOption('skip-compability')) {
+      $progressBar->setMessage('Checking compatibility, this might take a while');
+      $progressBar->display();
+      $this->compatibility->run();
+      $this->data->addResult($this->compatibility->getSummary());
+    }
     $progressBar->advance();
 
     // Run drupal-check
