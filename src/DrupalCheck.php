@@ -2,8 +2,6 @@
 
 namespace wesleydv\DrupalUpgradeAudit;
 
-use DrupalFinder\DrupalFinder;
-use http\Exception\RuntimeException;
 use Nette\Neon\Neon;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

@@ -14,7 +14,6 @@ use Nette\Utils\Finder;
 class Complexity {
 
   private $data;
-  private $customFolder;
 
   public function __construct(Data $data) {
     $this->data = $data;
