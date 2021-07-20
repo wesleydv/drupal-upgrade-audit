@@ -3,6 +3,7 @@
 namespace wesleydv\DrupalUpgradeAudit;
 
 use DrupalFinder\DrupalFinder;
+use http\Exception\RuntimeException;
 use Nette\Neon\Neon;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -63,7 +64,7 @@ class DrupalCheck {
       'parameters' => [
         'tipsOfTheDay' => false,
         'reportUnmatchedIgnoredErrors' => false,
-        'excludes_analyse' => [
+        'excludePaths' => [
           '*/tests/Drupal/Tests/Listeners/Legacy/*',
           '*/tests/fixtures/*.php',
           '*/settings*.php',
@@ -138,19 +139,11 @@ class DrupalCheck {
 
     $output->writeln('<comment>Executing PHPStan</comment>', OutputInterface::VERBOSITY_DEBUG);
     $process->run(static function ($type, $buffer) use ($output) {
-      if (Process::ERR === $type) {
-        $output->write($buffer, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_DEBUG);
-      } else {
-        $output->write($buffer, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_DEBUG);
-      }
+      $output->write($buffer, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_DEBUG);
     });
     $output->writeln('<comment>Finished executing PHPStan</comment>', OutputInterface::VERBOSITY_DEBUG);
     $output->writeln('<comment>Unlinking PHPStan configuration</comment>', OutputInterface::VERBOSITY_DEBUG);
     unlink($configuration);
-
-    if ($code = $process->getExitCode() > 1) {
-      throw new \RuntimeException(sprintf('PHPStan exit code %s', $code));
-    }
 
     $check_results_file = sprintf('%s-check.txt', $this->data->getDir());
     $output->writeln(sprintf('<comment>Writing PHPStan results to %s</comment>', $check_results_file), OutputInterface::VERBOSITY_VERBOSE);
@@ -165,7 +158,10 @@ class DrupalCheck {
 
     if (preg_match('/Found (\d+) error/', $phpstan_output, $num_errors)) {
       $this->data->addResult(sprintf('Drupal check: Found %s errors, check %s for details', $num_errors[1], $check_results_file));
+      return;
     }
+
+    throw new \RuntimeException('Unable to analyse PHPStan output');
   }
 
 }
