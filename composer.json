@@ -5,11 +5,13 @@
         }
     },
     "require": {
-        "symfony/yaml": "^5.3",
+        "symfony/yaml": "^4.4",
         "guzzlehttp/guzzle": "^7.0",
         "ext-simplexml": "*",
         "czproject/git-php": "^4.0",
-        "symfony/console": "^5.3",
-        "nette/finder": "^2.5"
+        "symfony/console": "^4.4",
+        "nette/finder": "^2.5",
+        "mglaman/drupal-check": "^1.1",
+        "mglaman/phpstan-drupal": "0.12.10"
     }
 }

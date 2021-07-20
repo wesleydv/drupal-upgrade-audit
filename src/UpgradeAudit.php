@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+
 /**
  * Class UpgradeAudit.
  *
@@ -79,7 +80,7 @@ class UpgradeAudit extends Command {
 
     // Run drupal-check
     $progressBar->setMessage("Looking for deprecated code");
-    $this->data->addResult($this->drupalCheck->runDeprecated());
+    $this->drupalCheck->runDeprecated($input, $output);
     $progressBar->finish();
 
     $line = str_pad('', 80, '#');
@@ -87,7 +88,7 @@ class UpgradeAudit extends Command {
     $output->writeln($this->data->getResult());
     $output->writeln(['', $line, '']);
 
-    return Command::SUCCESS;
+    return 0;
   }
 
 }
