@@ -16,7 +16,7 @@ class Data {
 
   private $repo;
   private $project;
-  private $baseDir = '/tmp';
+  private $baseDir = '/tmp/drupal-upgrade-audit';
   private $result = [];
   private $dir;
   private $drupalFinder;
@@ -25,11 +25,6 @@ class Data {
     $this->repo = $repo;
     $this->project = Helpers::extractRepositoryNameFromUrl($repo);
     $this->dir = sprintf('%s/%s', $this->baseDir, $this->project);
-    $this->drupalFinder = new DrupalFinder();
-
-    if (!$this->drupalFinder->locateRoot($this->dir)) {
-      throw new \RuntimeException(sprintf('Unable to locate the Drupal root in %s', $this->dir));
-    }
   }
 
   public function getRepo(): string {
@@ -57,11 +52,18 @@ class Data {
   }
 
   public function getDrupalFinder(): DrupalFinder {
+    if (empty($this->drupalFinder)) {
+      $this->drupalFinder = new DrupalFinder();
+
+      if (!$this->drupalFinder->locateRoot($this->dir)) {
+        throw new \RuntimeException(sprintf('Unable to locate the Drupal root in %s', $this->dir));
+      }
+    }
     return $this->drupalFinder;
   }
 
   public function getCustomFolder(): string {
-    return sprintf('%s/modules/custom', $this->drupalFinder->getDrupalRoot());
+    return sprintf('%s/modules/custom', $this->getDrupalFinder()->getDrupalRoot());
   }
 
 }

@@ -26,5 +26,5 @@ $compatibility = new Compatibility($data, $client);
 // Setup application.
 $application = new Application();
 $application->add(new UpgradeAudit($data, $git, $version, $complexity, $drupal_check, $compatibility));
-$application->setDefaultCommand('upgrade-audit', TRUE);
+$application->setDefaultCommand('drupal-upgrade-audit', TRUE);
 $application->run();

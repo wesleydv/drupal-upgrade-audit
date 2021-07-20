@@ -36,7 +36,7 @@ class UpgradeAudit extends Command {
     $this->compatibility = $compatibility;
   }
 
-  protected static $defaultName = 'upgrade-audit';
+  protected static $defaultName = 'drupal-upgrade-audit';
 
   protected function configure(): void {
     $this
