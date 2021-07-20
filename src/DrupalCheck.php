@@ -79,21 +79,19 @@ class DrupalCheck {
     ];
     $configuration_data['parameters']['ignoreErrors'] = array_merge($ignored_deprecation_errors, $configuration_data['parameters']['ignoreErrors']);
 
-    if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-      // Running as a project dependency.
-      $output->writeln('<comment>Assumed running as local dependency</comment>', OutputInterface::VERBOSITY_DEBUG);
-      $phpstanBin = \realpath(__DIR__ . '/../vendor/phpstan/phpstan/phpstan.phar');
-      $configuration_data['parameters']['bootstrapFiles'] = [\realpath(__DIR__ . '/../vendor/mglaman/drupal-check/error-bootstrap.php')];
-      $configuration_data['includes'] = [
-        \realpath(__DIR__ . '/../vendor/phpstan/phpstan-deprecation-rules/rules.neon'),
-        \realpath(__DIR__ . '/../vendor/mglaman/phpstan-drupal/extension.neon'),
-      ];
-    } else {
-      throw new \RuntimeException('Could not determine if local or global installation');
+    $vendorRootCheck = '/../vendor';
+    if (!file_exists(__DIR__ . $vendorRootCheck . '/autoload.php')) {
+      $vendorRootCheck = '/../../..';
     }
+    $phpstanBin = \realpath(__DIR__ . $vendorRootCheck . '/phpstan/phpstan/phpstan.phar');
+    $configuration_data['parameters']['bootstrapFiles'] = [\realpath(__DIR__ . $vendorRootCheck . '/mglaman/drupal-check/error-bootstrap.php')];
+    $configuration_data['includes'] = [
+      \realpath(__DIR__ . $vendorRootCheck . '/phpstan/phpstan-deprecation-rules/rules.neon'),
+      \realpath(__DIR__ . $vendorRootCheck . '/mglaman/phpstan-drupal/extension.neon'),
+    ];
 
     if (!file_exists($phpstanBin)) {
-      throw new \RuntimeException(sprintf('Could not find PHPStan at  %s', $phpstanBin));
+      throw new \RuntimeException(sprintf('Could not find PHPStan at %s', $phpstanBin));
     }
 
     $output->writeln(sprintf('<comment>PHPStan path: %s</comment>', $phpstanBin), OutputInterface::VERBOSITY_DEBUG);
