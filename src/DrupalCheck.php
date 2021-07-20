@@ -24,7 +24,6 @@ class DrupalCheck {
    * DrupalCheck constructor.
    */
   public function __construct(Data $data) {
-    //$this->commandAvailable();
     $this->data = $data;
   }
 
@@ -35,7 +34,7 @@ class DrupalCheck {
    *   A summary of drupal-check
    */
   public function runDeprecated(InputInterface $input, OutputInterface $output) {
-    $this->call($input, $output, sprintf('%s/docroot/modules/custom', $this->data->getDir()));
+    $this->call($input, $output);
   }
 
   /**
@@ -44,14 +43,10 @@ class DrupalCheck {
    * Copied from drupal-check/Command/CheckCommand.php.
    * ToDo: needs some cleanup.
    */
-  private function call(InputInterface $input, OutputInterface $output, $custom_dir) {
-    $drupalFinder = new DrupalFinder();
-    $drupalFinder->locateRoot($custom_dir);
+  private function call(InputInterface $input, OutputInterface $output) {
+    $drupalFinder = $this->data->getDrupalFinder();
     $drupalRoot = realpath($drupalFinder->getDrupalRoot());
     $vendorRoot = realpath($drupalFinder->getVendorDir());
-    if (!$drupalRoot) {
-      throw new \RuntimeException(sprintf('Unable to locate the Drupal root in %s', $custom_dir));
-    }
 
     $output->writeln(sprintf('<comment>Current working directory: %s</comment>', getcwd()), OutputInterface::VERBOSITY_DEBUG);
     $output->writeln(sprintf('<info>Using Drupal root: %s</info>', $drupalRoot), OutputInterface::VERBOSITY_DEBUG);
@@ -133,7 +128,8 @@ class DrupalCheck {
       $command[] = '-vvv';
     }
 
-    $command[] = $custom_dir;
+    // Add path to analyze to command.
+    $command[] = $this->data->getCustomFolder();
     $process = new Process($command);
     $process->setTimeout(null);
 

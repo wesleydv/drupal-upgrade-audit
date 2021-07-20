@@ -14,6 +14,7 @@ use Nette\Utils\Finder;
 class Complexity {
 
   private $data;
+  private $customFolder;
 
   public function __construct(Data $data) {
     $this->data = $data;
@@ -26,7 +27,7 @@ class Complexity {
    *   Number of custom modules.
    */
   public function getCustomModules() {
-    return Finder::findFiles('**modules/custom/**.info.yml')->from($this->data->getDir())->count();
+    return Finder::findFiles('**.info.yml')->from($this->data->getCustomFolder())->count();
   }
 
   /**
@@ -36,13 +37,8 @@ class Complexity {
    *   Number of custom code lines.
    */
   public function getCustomCodeLines() {
-    $search = [
-      '**modules/custom/**.php',
-      '**modules/custom/**.module',
-    ];
-
     $lines = 0;
-    foreach (Finder::findFiles($search)->from($this->data->getDir()) as $fileInfo) {
+    foreach (Finder::findFiles('**.php', '**.module')->from($this->data->getCustomFolder()) as $fileInfo) {
       $file = $fileInfo->openFile();
       $file->seek($file->getSize());
       $lines += $file->key();

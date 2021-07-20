@@ -37,8 +37,9 @@ class Version {
   private function getFirstDrupalPhp(): string {
     $repo = $this->git->getRepo();
 
-    // Find commint where lib/Drupal.php is added the first time.
-    $revision = reset($repo->execute('log' , '--format=%H',  '--diff-filter=A', '--', '*lib/Drupal.php'));
+    // Find commit where lib/Drupal.php is added the first time.
+    $rev_results = $repo->execute('log' , '--format=%H',  '--diff-filter=A', '--', '*lib/Drupal.php');
+    $revision = reset($rev_results);
     $ls_tree = $repo->execute('ls-tree', '--name-only', '-r', $revision);
 
     // Find the full path to lib/Drupal.php;

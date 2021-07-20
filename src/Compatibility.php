@@ -149,10 +149,8 @@ class Compatibility {
    */
   private function getModuleInfo(string $module): array {
     // ToDo: This is slow
-    //$yml_path = trim(`find . -name "$module.info.yml" -print -quit`);
     $iter = Finder::findFiles(sprintf('**%s.info.yml', $module))
-      ->from($this->data->getDir())
-      //->exclude('.git', 'vendor')
+      ->from($this->data->getDrupalFinder()->getDrupalRoot())
       ->getIterator();
     $iter->rewind();
     $yml_path = $iter->current()->getPathname();
